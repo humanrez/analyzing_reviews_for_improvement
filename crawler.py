@@ -3,6 +3,7 @@ from dotenv import load_dotenv
 from datetime import datetime, date, timedelta
 from supabase import create_client
 from google_play_scraper import reviews, Sort
+from postgrest.exceptions import APIError
 
 load_dotenv()
 
@@ -20,7 +21,7 @@ if not app_data.data:
 yesterday = date.today() - timedelta(days=1)
 
 rows = []
-batch_size = 10
+batch_size = 9
 app_count = 0
 
 # Crawl reviews for each app
@@ -68,13 +69,49 @@ for app_info in app_data.data:
     # Insert every 10 apps
     if app_count % batch_size == 0:
         if rows:
-            supabase.table("reviews").insert(rows).execute()
-            print(f"Inserted {len(rows)} reviews (batch at {app_count} apps).")
+            try:
+                supabase.table("reviews").insert(rows).execute()
+                print(f"Inserted {len(rows)} reviews (batch at {app_count} apps).")
+            except APIError as e:
+                if "duplicate key" in str(e):
+                    print(f"Duplicate key found. Inserting non-duplicate reviews...")
+                    inserted = 0
+                    skipped = 0
+                    for row in rows:
+                        try:
+                            supabase.table("reviews").insert([row]).execute()
+                            inserted += 1
+                        except APIError as dup_err:
+                            if "duplicate key" in str(dup_err):
+                                skipped += 1
+                            else:
+                                raise
+                    print(f"Inserted {inserted} reviews, skipped {skipped} duplicates.")
+                else:
+                    raise
             rows = []
 
 # Insert remaining reviews
 if rows:
-    supabase.table("reviews").insert(rows).execute()
-    print(f"Inserted {len(rows)} reviews (final batch).")
+    try:
+        supabase.table("reviews").insert(rows).execute()
+        print(f"Inserted {len(rows)} reviews (final batch).")
+    except APIError as e:
+        if "duplicate key" in str(e):
+            print(f"Duplicate key found. Inserting non-duplicate reviews...")
+            inserted = 0
+            skipped = 0
+            for row in rows:
+                try:
+                    supabase.table("reviews").insert([row]).execute()
+                    inserted += 1
+                except APIError as dup_err:
+                    if "duplicate key" in str(dup_err):
+                        skipped += 1
+                    else:
+                        raise
+            print(f"Inserted {inserted} reviews, skipped {skipped} duplicates.")
+        else:
+            raise
 else:
     print("No reviews found.")
