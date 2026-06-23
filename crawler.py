@@ -11,7 +11,7 @@ SUPABASE_KEY = os.environ["SUPABASE_KEY"]
 
 supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 
-app_data = supabase.table("apps").select("app_id,app_name,package,cat_id,source_id").execute()
+app_data = supabase.table("apps").select("app_id,app_name,package,cat_id,source_id").in_("app_id", ["1000021", "1000022"]).execute()
 if not app_data.data:
     print("App not found in database.")
     exit(1)
