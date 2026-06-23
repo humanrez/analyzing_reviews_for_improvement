@@ -11,7 +11,7 @@ SUPABASE_KEY = os.environ["SUPABASE_KEY"]
 
 supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 
-app_data = supabase.table("apps").select("app_id,app_name,package,cat_id,source_id").in_("app_id", ["1000021", "1000022"]).execute()
+app_data = supabase.table("apps").select("app_id,app_name,package,cat_id,source_id").execute()
 if not app_data.data:
     print("App not found in database.")
     exit(1)
@@ -20,6 +20,8 @@ if not app_data.data:
 yesterday = date.today() - timedelta(days=1)
 
 rows = []
+batch_size = 10
+app_count = 0
 
 # Crawl reviews for each app
 for app_info in app_data.data:
@@ -60,10 +62,19 @@ for app_info in app_data.data:
             "review_year": item["at"].year,
             "quarter": (item["at"].month - 1) // 3 + 1
         })
+    
+    app_count += 1
+    
+    # Insert every 10 apps
+    if app_count % batch_size == 0:
+        if rows:
+            supabase.table("reviews").insert(rows).execute()
+            print(f"Inserted {len(rows)} reviews (batch at {app_count} apps).")
+            rows = []
 
+# Insert remaining reviews
 if rows:
     supabase.table("reviews").insert(rows).execute()
-    #print(rows)
-    print(f"Inserted {len(rows)} reviews.")
+    print(f"Inserted {len(rows)} reviews (final batch).")
 else:
     print("No reviews found.")
