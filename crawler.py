@@ -21,8 +21,6 @@ if not app_data.data:
 yesterday = date.today() - timedelta(days=1)
 
 rows = []
-batch_size = 9
-app_count = 0
 
 # Crawl reviews for each app
 for app_info in app_data.data:
@@ -64,34 +62,7 @@ for app_info in app_data.data:
             "quarter": (item["at"].month - 1) // 3 + 1
         })
     
-    app_count += 1
-    
-    # Insert every 10 apps
-    if app_count % batch_size == 0:
-        if rows:
-            try:
-                supabase.table("reviews").insert(rows).execute()
-                print(f"Inserted {len(rows)} reviews (batch at {app_count} apps).")
-            except APIError as e:
-                if "duplicate key" in str(e):
-                    print(f"Duplicate key found. Inserting non-duplicate reviews...")
-                    inserted = 0
-                    skipped = 0
-                    for row in rows:
-                        try:
-                            supabase.table("reviews").insert([row]).execute()
-                            inserted += 1
-                        except APIError as dup_err:
-                            if "duplicate key" in str(dup_err):
-                                skipped += 1
-                            else:
-                                raise
-                    print(f"Inserted {inserted} reviews, skipped {skipped} duplicates.")
-                else:
-                    raise
-            rows = []
-
-# Insert remaining reviews
+# Insert all collected reviews once at the end
 if rows:
     try:
         supabase.table("reviews").insert(rows).execute()
