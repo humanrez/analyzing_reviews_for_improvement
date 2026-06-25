@@ -40,6 +40,10 @@ for app_info in app_data.data:
     )
 
     for item in result:
+        review_text = (item.get("content") or "").strip()
+        if len(review_text) < 1:
+            continue
+
         # Filter reviews from D-1 (yesterday) only
         review_date = item["at"].date()
         print(item)
@@ -48,7 +52,7 @@ for app_info in app_data.data:
             "date": item["at"].isoformat(),
             "id": item["reviewId"],
             "score": item["score"],
-            "text": item["content"],
+            "text": review_text,
             "thumbsUp": item["thumbsUpCount"],
             "userName": item["userName"],
             "version": item["appVersion"],
