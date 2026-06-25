@@ -44,8 +44,10 @@ for app_info in app_data.data:
         if len(review_text) < 1:
             continue
 
-        # Filter reviews from D-1 (yesterday) only
         review_date = item["at"].date()
+        if review_date != yesterday:
+            continue
+
         print(item)
         print("===")
         rows.append({
