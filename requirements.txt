@@ -2,4 +2,6 @@ streamlit
 pandas
 supabase
 google-play-scraper
-dotenv
+openai
+anthropic
+python-dotenv
