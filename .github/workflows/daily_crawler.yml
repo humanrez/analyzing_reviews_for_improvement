@@ -43,7 +43,7 @@ jobs:
           SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           ANTHROPIC_MODEL: ${{ secrets.ANTHROPIC_MODEL }}
-        run: python sentiment_categorization.py
+        run: python sentiment_classification.py
 
       - name: Run text categorization
         env:
